@@ -18,10 +18,16 @@ os.environ["OPENAI_API_KEY"] = creds.get("openai_api_key", "")
 
 def get_bart_model():
     if not hasattr(get_bart_model, "tokenizer") or not hasattr(get_bart_model, "model"):
-        local_bart_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "bart_finetuned_meeting_summary"))
-        get_bart_model.tokenizer = AutoTokenizer.from_pretrained(local_bart_path)
-        get_bart_model.model = AutoModelForSeq2SeqLM.from_pretrained(local_bart_path)
-        #print(f"[INFO] Loaded local BART model from {local_bart_path}")
+        bart_drive_path = os.environ.get("BART_MODEL_PATH")
+        if bart_drive_path and os.path.exists(bart_drive_path):
+            model_path = bart_drive_path
+        else:
+            model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "bart_finetuned_meeting_summary"))
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"BART model path not found: {model_path}")
+        get_bart_model.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        get_bart_model.model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        #print(f"[INFO] Loaded BART model from {model_path}")
     return get_bart_model.tokenizer, get_bart_model.model
 
 def get_mistral_model():
