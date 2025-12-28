@@ -6,9 +6,22 @@ from mcp.tools.nlp_task_extraction import extract_tasks_nlp
 from mcp.tools.llm_task_extraction import extract_tasks_jira_format
 from mcp.tools.mcp_calendar_tool import get_calendar_transcripts
 
+
 st.set_page_config(page_title="AI Meeting Management", layout="wide")
 st.title("🤖 AI Meeting Manager (Conversational)")
 st.caption("Powered by SummarizationAgent, TaskManagerAgent, RiskDetectionAgent")
+
+# --- Status/Info Panel ---
+tools_loaded = [
+    "Summarization (BART, LLM, Mistral)",
+    "Task Extraction (NLP, LLM)",
+    "Calendar Integration",
+    "Jira Integration"
+]
+st.info(f"**Tools loaded:** {len(tools_loaded)} ({', '.join(tools_loaded)})")
+
+session_info = f"**Session:** Meeting ID: `{st.session_state.get('meeting_id', 'N/A')}` | Summarization Mode: `{st.session_state.get('summarization_mode', 'auto')}` | Next Action: `{st.session_state.get('next_action', 'N/A')}`"
+st.markdown(session_info)
 
 # --- Conversational Chat Section ---
 if "chat_history" not in st.session_state:
@@ -44,7 +57,34 @@ if "task_extraction_method" not in st.session_state:
 user_input = st.chat_input("Type your request (e.g., 'Summarize meeting', 'Extract tasks', 'Show calendar events', 'Create Jira tasks')...")
 
 def ai_message(msg):
-    st.session_state.chat_history.append({"role": "ai", "content": msg})
+    # If the message is a dict with summary/action_items, format it nicely
+    if isinstance(msg, dict) and ("summary_text" in msg or "action_items" in msg):
+        content = ""
+        if "summary_text" in msg:
+            content += "**Summary:**\n"
+            if isinstance(msg["summary_text"], list):
+                for item in msg["summary_text"]:
+                    content += f"- {item}\n"
+            else:
+                content += f"{msg['summary_text']}\n"
+        if "action_items" in msg and msg["action_items"]:
+            content += "\n**Action Items:**\n"
+            for item in msg["action_items"]:
+                if isinstance(item, dict):
+                    task = item.get('task', '')
+                    owner = item.get('owner', '')
+                    deadline = item.get('deadline', '')
+                    content += f"- **Task:** {task}  "
+                    if owner:
+                        content += f"**Owner:** {owner}  "
+                    if deadline:
+                        content += f"**Deadline:** {deadline}"
+                    content += "\n"
+                else:
+                    content += f"- {item}\n"
+        st.session_state.chat_history.append({"role": "ai", "content": content})
+    else:
+        st.session_state.chat_history.append({"role": "ai", "content": msg})
 
 def user_message(msg):
     st.session_state.chat_history.append({"role": "user", "content": msg})
@@ -93,8 +133,10 @@ if user_input:
         ai_message(f"Summarizing with mode '{st.session_state.summarization_mode}'. Please wait...")
         try:
             result = summarize_meeting(st.session_state.transcript, st.session_state.meeting_id, mode=st.session_state.summarization_mode)
-            st.session_state.summary = result.get("summary", "")
-            ai_message(f"Summary:\n{st.session_state.summary}\nWould you like to extract tasks? Available methods: {', '.join(TASK_EXTRACTION_METHODS)}.")
+            st.session_state.summary = result.get("summary_text", "")
+            # Display only summary and action items in chat
+            ai_message(result)
+            ai_message(f"Would you like to extract tasks? Available methods: {', '.join(TASK_EXTRACTION_METHODS)}.")
             st.session_state.next_action = "choose_task_extraction_method"
         except Exception as e:
             ai_message(f"Error during summarization: {e}")
