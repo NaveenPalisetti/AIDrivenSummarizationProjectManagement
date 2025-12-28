@@ -51,8 +51,12 @@ class LLMTaskManagerAgent:
         print(f"LLMTaskManagerAgent: JIRA_URL={self.jira_url}, JIRA_USER={self.jira_user}, JIRA_PROJECT={self.jira_project}")
         if JIRA and self.jira_url and self.jira_user and self.jira_token:
             print("LLMTaskManagerAgent: Initializing JIRA connection")
-            self.jira = JIRA(server=self.jira_url, basic_auth=(self.jira_user, self.jira_token))
-            print("LLMTaskManagerAgent:  ",self.jira)
+            try:
+                self.jira = JIRA(server=self.jira_url, basic_auth=(self.jira_user, self.jira_token))
+                print("LLMTaskManagerAgent:  ", self.jira)
+            except Exception as e:
+                print(f"[ERROR][LLMTaskManagerAgent] Failed to initialize JIRA connection: {e}")
+                self.jira = None
 
 
     def extract_tasks_from_transcript_llm(self, meeting_id: str, transcript: str):
@@ -80,21 +84,30 @@ class LLMTaskManagerAgent:
                 if t.get('due'):
                     issue_dict['duedate'] = t['due']
                 try:
+                    print(f"[DEBUG][LLMTaskManagerAgent] Creating Jira issue with fields: {issue_dict}")
                     issue = self.jira.create_issue(fields=issue_dict)
+                    print(f"[DEBUG][LLMTaskManagerAgent] Created Jira issue: {issue.key}")
                     t['jira_issue'] = issue.key
                 except Exception as e:
+                    print(f"[ERROR][LLMTaskManagerAgent] Jira issue creation failed: {e}")
                     t['jira_error'] = str(e)
+            else:
+                print("[ERROR][LLMTaskManagerAgent] JIRA not configured")
         with open(self.tasks_file, 'w', encoding='utf-8') as f:
             json.dump(existing, f, indent=2)
         return tasks
 
     def _parse_jira_formatted_tasks(self, jira_text, meeting_id):
+        print(f"[DEBUG][_parse_jira_formatted_tasks] Raw jira_text input:\n{jira_text}")
         tasks = []
         lines = [l.strip() for l in jira_text.splitlines() if l.strip()]
+        print(f"[DEBUG][_parse_jira_formatted_tasks] Split lines: {lines}")
         current = {}
         for line in lines:
+            print(f"[DEBUG][_parse_jira_formatted_tasks] Processing line: {line}")
             if line.startswith('- Summary:'):
                 if current:
+                    print(f"[DEBUG][_parse_jira_formatted_tasks] Appending task: {current}")
                     tasks.append(current)
                 current = {'meeting_id': meeting_id, 'title': line.replace('- Summary:', '').strip()}
             elif line.startswith('- Description:'):

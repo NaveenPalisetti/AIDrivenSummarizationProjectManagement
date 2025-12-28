@@ -263,10 +263,12 @@ if user_input:
                 st.session_state.next_action = "select_tasks_to_create"
             else:
                 ai_message("Creating selected tasks in Jira...")
+                print(f"[DEBUG][Jira] Selected task indices: {selected}")
                 llm_task_manager = LLMTaskManagerAgent()
                 created = []
                 for idx in selected:
                     t = st.session_state.tasks[idx]
+                    print(f"[DEBUG][Jira] Attempting to create Jira issue for task: {t}")
                     if llm_task_manager.jira:
                         issue_dict = {
                             'project': {'key': llm_task_manager.jira_project},
@@ -278,12 +280,19 @@ if user_input:
                             issue_dict['assignee'] = {'name': t.get('owner', t.get('Assignee'))}
                         if t.get('due') or t.get('Due Date'):
                             issue_dict['duedate'] = t.get('due', t.get('Due Date'))
+                        print(f"[DEBUG][Jira] Issue dict: {issue_dict}")
                         try:
                             issue = llm_task_manager.jira.create_issue(fields=issue_dict)
+                            print(f"[DEBUG][Jira] Created issue: {issue.key}")
                             t['jira_issue'] = issue.key
                             created.append(issue.key)
                         except Exception as e:
+                            print(f"[ERROR][Jira] Exception during issue creation: {e}")
                             t['jira_error'] = str(e)
+                    else:
+                        print("[ERROR][Jira] Jira connection not configured.")
+                        t['jira_error'] = "Jira connection not configured."
+                print(f"[DEBUG][Jira] Created issues: {created}")
                 if created:
                     ai_message(f"Tasks created in Jira! Issues: {created}")
                 else:
