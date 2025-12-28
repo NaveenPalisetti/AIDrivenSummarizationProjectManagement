@@ -4,67 +4,22 @@ Outputs tasks in Jira issue format using a local BART model.
 """
 
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
-MODEL_PATH = "models/bart_finetuned_meeting_summary"
-_tokenizer = None
-_model = None
-_pipe = None
+# Use Mistral for LLM-based task extraction
+from mcp.agents.mistral_summarizer import summarize_with_mistral
+from mcp.agents.summarization_agent import get_mistral_model
 
-def get_llm_pipeline():
-    global _tokenizer, _model, _pipe
-    if _pipe is None or _tokenizer is None or _model is None:
-        _tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-        _model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
-        _pipe = pipeline("text-generation", model=_model, tokenizer=_tokenizer, device=-1)
-    return _tokenizer, _model, _pipe
 
-def extract_tasks_jira_format(transcript):
-    tokenizer, model, pipe = get_llm_pipeline()
-    # --- Original code commented for reference ---
-    # Build prompt
-    # prompt = (
-    #     "Extract all action items or tasks from the following meeting transcript. "
-    #     "For each, output in Jira issue format as strictly as possible, one after another, with each field on its own line.\n"
-    #     "- Summary: <short summary>\n"
-    #     "- Description: <detailed description>\n"
-    #     "- Assignee: <person, if mentioned>\n"
-    #     "- Due Date: <date, if mentioned>\n"
-    #     "Transcript:\n"
-    #     f"{transcript}\n"
-    #     "Tasks:"
-    # )
-    # max_length = getattr(model.config, 'max_position_embeddings', 1024)
-    # prompt_token_allowance = max_length - 128  # leave room for output tokens
-    # input_ids = tokenizer.encode(prompt, truncation=True, max_length=prompt_token_allowance)
-    # print(f"[DEBUG] Truncated input token length: {len(input_ids)}, Model max: {max_length}")
-    # truncated_prompt = tokenizer.decode(input_ids, skip_special_tokens=True)
-    # result = pipe(truncated_prompt, max_new_tokens=128, temperature=0.3)
-    # print("RAW OUTPUT:", result)
-    # output_text = result[0]['generated_text']
-    # def parse_tasks(text):
-    #     tasks = []
-    #     current_task = {}
-    #     for line in text.splitlines():
-    #         line = line.strip()
-    #         if line.startswith('- Summary:'):
-    #             if current_task:
-    #                 tasks.append(current_task)
-    #                 current_task = {}
-    #             current_task['Summary'] = line[len('- Summary:'):].strip()
-    #         elif line.startswith('- Description:'):
-    #             current_task['Description'] = line[len('- Description:'):].strip()
-    #         elif line.startswith('- Assignee:'):
-    #             current_task['Assignee'] = line[len('- Assignee:'):].strip()
-    #         elif line.startswith('- Due Date:'):
-    #             current_task['Due Date'] = line[len('- Due Date:'):].strip()
-    #     if current_task:
-    #         tasks.append(current_task)
-    #     return tasks
-    # tasks = parse_tasks(output_text)
-    # return tasks  # List of dicts, each representing a task
-
-    # --- New, faster version for CPU ---
+def extract_tasks_jira_format(transcript, session_action_items=None):
+    """
+    If session_action_items is provided and non-empty, use them directly.
+    Otherwise, run Mistral extraction as before.
+    """
+    if session_action_items and isinstance(session_action_items, list) and len(session_action_items) > 0:
+        print("[DEBUG] Using action_items from session, skipping Mistral extraction.")
+        return session_action_items
+    mistral_tokenizer, mistral_model = get_mistral_model()
+    # Use a prompt tailored for Jira task extraction
     prompt = (
         "Extract up to 3 action items or tasks from the following meeting transcript. "
         "For each, output in Jira issue format as strictly as possible, one after another, with each field on its own line.\n"
@@ -76,37 +31,33 @@ def extract_tasks_jira_format(transcript):
         f"{transcript}\n"
         "Tasks:"
     )
-    max_length = getattr(model.config, 'max_position_embeddings', 1024)
-    prompt_token_allowance = max_length - 32  # leave more room for output tokens
-    input_ids = tokenizer.encode(prompt, truncation=True, max_length=prompt_token_allowance)
-    print(f"[DEBUG] Truncated input token length: {len(input_ids)}, Model max: {max_length}")
-    truncated_prompt = tokenizer.decode(input_ids, skip_special_tokens=True)
-    result = pipe(truncated_prompt, max_new_tokens=32, temperature=0.3)
-    print("RAW OUTPUT:", result)
-    output_text = result[0]['generated_text']
-
-    def parse_tasks(text):
-        tasks = []
-        current_task = {}
-        for line in text.splitlines():
-            line = line.strip()
-            if line.startswith('- Summary:'):
-                if current_task:
-                    tasks.append(current_task)
-                    current_task = {}
-                current_task['Summary'] = line[len('- Summary:'):].strip()
-            elif line.startswith('- Description:'):
-                current_task['Description'] = line[len('- Description:'):].strip()
-            elif line.startswith('- Assignee:'):
-                current_task['Assignee'] = line[len('- Assignee:'):].strip()
-            elif line.startswith('- Due Date:'):
-                current_task['Due Date'] = line[len('- Due Date:'):].strip()
-        if current_task:
-            tasks.append(current_task)
-        return tasks
-
-    tasks = parse_tasks(output_text)
-    return tasks  # List of dicts, each representing a task
+    # Use the same chunking and summarization logic as summarize_with_mistral, but for this prompt
+    result = summarize_with_mistral(mistral_tokenizer, mistral_model, prompt, meeting_id="jira_task_extraction")
+    # Try to parse action items from the result (reuse action_items if present, else parse from summary_text)
+    action_items = result.get("action_items", [])
+    if not action_items:
+        # Fallback: try to parse from summary_text if model didn't return action_items
+        def parse_tasks(text):
+            tasks = []
+            current_task = {}
+            for line in text if isinstance(text, list) else text.splitlines():
+                line = line.strip()
+                if line.startswith('- Summary:'):
+                    if current_task:
+                        tasks.append(current_task)
+                        current_task = {}
+                    current_task['Summary'] = line[len('- Summary:'):].strip()
+                elif line.startswith('- Description:'):
+                    current_task['Description'] = line[len('- Description:'):].strip()
+                elif line.startswith('- Assignee:'):
+                    current_task['Assignee'] = line[len('- Assignee:'):].strip()
+                elif line.startswith('- Due Date:'):
+                    current_task['Due Date'] = line[len('- Due Date:'):].strip()
+            if current_task:
+                tasks.append(current_task)
+            return tasks
+        action_items = parse_tasks(result.get("summary_text", []))
+    return action_items
 
 if __name__ == "__main__":
     transcript = "Your transcript text here..."

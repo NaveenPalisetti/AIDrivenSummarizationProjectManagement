@@ -58,6 +58,7 @@ user_input = st.chat_input("Type your request (e.g., 'Summarize meeting', 'Extra
 
 def ai_message(msg):
     # If the message is a dict with summary/action_items, format it nicely
+    print("[DEBUG][ai_message] msg:", msg)
     if isinstance(msg, dict) and ("summary_text" in msg or "summary" in msg or "action_items" in msg):
         content = ""
         # Show summary as readable text (support both 'summary_text' and 'summary' keys)
@@ -136,37 +137,52 @@ if user_input:
         st.session_state.summarization_mode = user_input.strip().lower()
         ai_message(f"Summarizing with mode '{st.session_state.summarization_mode}'. Please wait...")
         try:
+            print("[DEBUG] Calling summarize_meeting with transcript:", st.session_state.transcript)
             result = summarize_meeting(st.session_state.transcript, st.session_state.meeting_id, mode=st.session_state.summarization_mode)
+            print("[DEBUG] summarize_meeting result:", result)
             st.session_state.summary = result.get("summary_text", "")
             # Display only summary and action items in chat
             ai_message(result)
             # If action_items are present, use them as tasks and go directly to review/creation
             action_items = result.get("action_items", [])
+            print("[DEBUG] Extracted action_items:", action_items)
             if action_items:
                 st.session_state.tasks = action_items
                 ai_message("Extracted action items from summary:")
-                # If all tasks are dicts, show as a table
+                # Always try to show as a table if all are dicts
+                shown_table = False
                 if all(isinstance(t, dict) for t in action_items):
                     import pandas as pd
                     df = pd.DataFrame(action_items)
-                    if not df.empty:
-                        with st.chat_message("ai"):
+                    print("[DEBUG] Action items DataFrame:\n", df)
+                    with st.chat_message("ai"):
+                        if not df.empty:
                             st.write("Here are the extracted action items:")
                             st.table(df)
-                        ai_message("Please review the table above. Type the task numbers you want to create in Jira (e.g., '1,3' for Task 1 and Task 3), or 'all' to create all. Type 'show tasks' to see this table again.")
-                    else:
-                        with st.chat_message("ai"):
+                            shown_table = True
+                        else:
                             st.info("No action item information to display.")
-                        ai_message("No action item information to display. Please try extracting again.")
-                else:
+                # Always also show as readable list
+                with st.chat_message("ai"):
+                    st.write("**Action Items (List):**")
                     for i, t in enumerate(action_items, 1):
-                        st.markdown(f"**Task {i}:** {t}")
-                    ai_message("Please type the task numbers you want to create in Jira (e.g., '1,3' for Task 1 and Task 3), or 'all' to create all. Type 'show tasks' to see the list again.")
+                        if isinstance(t, dict):
+                            task = t.get('task') or t.get('summary') or ''
+                            owner = t.get('owner') or t.get('assignee') or ''
+                            deadline = t.get('deadline') or t.get('due_date') or ''
+                            print(f"[DEBUG] Action Item {i}: task={task}, owner={owner}, deadline={deadline}")
+                            st.write(f"{i}. Task: {task} | Owner: {owner} | Deadline: {deadline}")
+                        else:
+                            print(f"[DEBUG] Action Item {i}: {t}")
+                            st.write(f"{i}. {t}")
+                ai_message("Please review the action items above. Type the task numbers you want to create in Jira (e.g., '1,3' for Task 1 and Task 3), or 'all' to create all. Type 'show tasks' to see the list again.")
                 st.session_state.next_action = "select_tasks_to_create"
             else:
+                print("[DEBUG] No action items found in summary.")
                 ai_message(f"No action items found in summary. Would you like to extract tasks? Available methods: {', '.join(TASK_EXTRACTION_METHODS)}.")
                 st.session_state.next_action = "choose_task_extraction_method"
         except Exception as e:
+            print(f"[DEBUG] Error during summarization: {e}")
             ai_message(f"Error during summarization: {e}")
             st.session_state.next_action = None
     elif st.session_state.next_action == "choose_task_extraction_method" and user_input.strip() in TASK_EXTRACTION_METHODS:
