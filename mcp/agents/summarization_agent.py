@@ -189,6 +189,7 @@ class SummarizationAgent:
                     )
                     import torch
                     device = next(mistral_model.parameters()).device
+                    print("[INFO] Generating Mistral summary, this may take a while...",device) 
                     encoded = mistral_tokenizer.encode_plus(
                         mistral_prompt,
                         truncation=True,
