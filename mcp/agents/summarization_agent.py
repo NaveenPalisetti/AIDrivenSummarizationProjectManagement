@@ -152,7 +152,9 @@ class SummarizationAgent:
             }
         elif use_mistral:
             print("SummarizationAgent: Using local Mistral summarizer")
+            print("[INFO] Loading Mistral model, this may take a few moments...")
             mistral_tokenizer, mistral_model = get_mistral_model()
+            print("[INFO] Mistral model loaded!")
             if not transcript or len(transcript.split()) < 10:
                 mistral_summary = "Transcript too short for summarization."
             else:
@@ -187,15 +189,25 @@ class SummarizationAgent:
                     )
                     import torch
                     device = next(mistral_model.parameters()).device
-                    input_ids = mistral_tokenizer.encode(mistral_prompt, truncation=True, max_length=4096, return_tensors="pt").to(device)
+                    encoded = mistral_tokenizer.encode_plus(
+                        mistral_prompt,
+                        truncation=True,
+                        max_length=4096,
+                        return_tensors="pt"
+                    )
+                    input_ids = encoded["input_ids"].to(device)
+                    attention_mask = encoded["attention_mask"].to(device)
                     summary_ids = mistral_model.generate(
                         input_ids,
+                        attention_mask=attention_mask,
                         max_new_tokens=512,
                         do_sample=False,
                         num_beams=4,
-                        early_stopping=True
+                        early_stopping=True,
+                        pad_token_id=mistral_tokenizer.eos_token_id
                     )
                     mistral_summary = mistral_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+                    print("[INFO] Mistral summary generated:\n", mistral_summary)
                 except Exception as e:
                     mistral_summary = f"[Mistral summarization error: {e}]"
             summary_obj = {
