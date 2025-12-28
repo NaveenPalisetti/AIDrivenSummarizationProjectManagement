@@ -185,7 +185,9 @@ class SummarizationAgent:
                         "TRANSCRIPT:\n"
                         f"{transcript}\n"
                     )
-                    input_ids = mistral_tokenizer.encode(mistral_prompt, truncation=True, max_length=4096, return_tensors="pt")
+                    import torch
+                    device = next(mistral_model.parameters()).device
+                    input_ids = mistral_tokenizer.encode(mistral_prompt, truncation=True, max_length=4096, return_tensors="pt").to(device)
                     summary_ids = mistral_model.generate(
                         input_ids,
                         max_new_tokens=512,
