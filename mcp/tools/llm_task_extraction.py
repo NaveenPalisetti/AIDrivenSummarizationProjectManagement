@@ -57,6 +57,13 @@ def extract_tasks_jira_format(transcript, session_action_items=None):
                 tasks.append(current_task)
             return tasks
         action_items = parse_tasks(result.get("summary_text", []))
+    # Final fallback: if still empty, try to extract from transcript
+    if not action_items:
+        print("[DEBUG][LLM Task Extraction] No action items found in model output or summary, extracting from transcript as fallback.")
+        lines = [l.strip() for l in transcript.replace('\n', '. ').split('.') if l.strip()]
+        action_keywords = ['fix', 'complete', 'implement', 'create', 'update', 'assign', 'test', 'review', 'prepare', 'set up', 'ensure', 'action item', 'task']
+        action_items = [l for l in lines if any(k in l.lower() for k in action_keywords)]
+        print(f"[DEBUG][LLM Task Extraction] Fallback extracted action_items from transcript: {action_items}")
     return action_items
 
 if __name__ == "__main__":
