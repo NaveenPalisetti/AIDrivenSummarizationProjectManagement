@@ -26,14 +26,19 @@ def get_bart_model():
 
 def get_mistral_model():
     if not hasattr(get_mistral_model, "tokenizer") or not hasattr(get_mistral_model, "model"):
-        local_mistral_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "mistral-7B-Instruct-v0.2"))
-        if not os.path.exists(local_mistral_path):
-            raise FileNotFoundError(f"Mistral model path not found: {local_mistral_path}")
-        get_mistral_model.tokenizer = AutoTokenizer.from_pretrained(local_mistral_path)
+        # Check for Google Drive path via env var, else fallback to local
+        mistral_drive_path = os.environ.get("MISTRAL_MODEL_PATH")
+        if mistral_drive_path and os.path.exists(mistral_drive_path):
+            model_path = mistral_drive_path
+        else:
+            model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "mistral-7B-Instruct-v0.2"))
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Mistral model path not found: {model_path}")
+        get_mistral_model.tokenizer = AutoTokenizer.from_pretrained(model_path)
         try:
-            print("[INFO] Attempting to load Mistral in 4-bit quantized mode (bitsandbytes)...")
+            print(f"[INFO] Attempting to load Mistral from {model_path} in 4-bit quantized mode (bitsandbytes)...")
             get_mistral_model.model = AutoModelForCausalLM.from_pretrained(
-                local_mistral_path,
+                model_path,
                 device_map="auto",
                 load_in_4bit=True,
                 quantization_config=BitsAndBytesConfig(load_in_4bit=True)
@@ -41,7 +46,7 @@ def get_mistral_model():
             print("[INFO] Loaded Mistral in 4-bit quantized mode.")
         except Exception as e:
             print(f"[WARN] 4-bit quantization failed or bitsandbytes not available: {e}\nFalling back to normal model load.")
-            get_mistral_model.model = AutoModelForCausalLM.from_pretrained(local_mistral_path)
+            get_mistral_model.model = AutoModelForCausalLM.from_pretrained(model_path)
     return get_mistral_model.tokenizer, get_mistral_model.model
 
 
