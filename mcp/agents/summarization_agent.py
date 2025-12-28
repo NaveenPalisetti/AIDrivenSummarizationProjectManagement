@@ -46,7 +46,6 @@ def get_mistral_model():
             get_mistral_model.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 device_map="auto",
-                load_in_4bit=True,
                 quantization_config=BitsAndBytesConfig(load_in_4bit=True)
             )
             print("[INFO] Loaded Mistral in 4-bit quantized mode.")
