@@ -42,13 +42,16 @@ def summarize_with_mistral(mistral_tokenizer, mistral_model, transcript, meeting
             "- If some sections have no information, return an empty list.\n"
             "- Keep summary short but complete (5–8 bullet points or numbers).\n"
             "- Use simple, business-friendly language.\n"
-            "- DO NOT use placeholder text like 'point 1', 'point 2'.\n"
+            "- DO NOT use placeholder text like 'point 1', 'point 2', '<summary bullet 1>', '<task>', etc.\n"
+            "- DO NOT copy the example below. Fill with real meeting content.\n"
             "\n"
-            "RETURN THE OUTPUT IN THIS EXACT JSON FORMAT:\n"
+            "RETURN THE OUTPUT IN THIS EXACT JSON FORMAT (as a code block):\n"
+            "```json\n"
             "{\n"
             "  \"summary\": [\"<summary bullet 1>\", \"<summary bullet 2>\"],\n"
             "  \"action_items\": [ {\"task\": \"<task>\", \"owner\": \"<owner>\", \"deadline\": \"<deadline>\"} ]\n"
             "}\n"
+            "```\n"
             "\n"
             "TRANSCRIPT:\n"
             f"{chunk}\n"
@@ -122,18 +125,27 @@ def summarize_with_mistral(mistral_tokenizer, mistral_model, transcript, meeting
             if not item or not isinstance(item, str):
                 return False
             s = item.strip().lower()
-            if s in ("point 1", "point 2", "point1", "point2", "", "-"):
+            if s in ("point 1", "point 2", "point1", "point2", "", "-", "<summary bullet 1>", "<summary bullet 2>"):
                 return False
-            if s.startswith("point "):
+            if s.startswith("point ") or s.startswith("<summary"):
+                return False
+            if '<' in s and '>' in s:
                 return False
             return True
         def is_valid_action_item(item):
             if not item:
                 return False
             if isinstance(item, dict):
+                # Remove if any value is a placeholder like <task> or empty
+                for v in item.values():
+                    if isinstance(v, str) and (v.strip() == '' or v.strip().startswith('<')):
+                        return False
                 return any(v for v in item.values())
             if isinstance(item, str):
-                return item.strip() != ""
+                s = item.strip()
+                if s == '' or s.startswith('<'):
+                    return False
+                return True
             return False
         filtered_summaries = [s for s in (summary_text if isinstance(summary_text, list) else [summary_text]) if is_valid_summary_item(s)]
         filtered_action_items = [a for a in (action_items if isinstance(action_items, list) else [action_items]) if is_valid_action_item(a)]
