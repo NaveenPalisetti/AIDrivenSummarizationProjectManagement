@@ -1,0 +1,243 @@
+
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.28.0.12:8501
+  External URL: http://34.143.156.39:8501
+
+2025-12-28 10:14:17.234421: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-12-28 10:14:17.254665: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1766916857.279067   13757 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1766916857.286424   13757 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1766916857.305303   13757 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1766916857.305338   13757 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1766916857.305341   13757 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1766916857.305344   13757 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-12-28 10:14:17.310786: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Fetched 2 events from Google Calendar.
+SummarizationAgent: Using mode=mistral
+SummarizationAgent: Using local Mistral summarizer
+[INFO] Loading Mistral model, this may take a few moments...
+[INFO] Attempting to load Mistral from /content/drive/MyDrive/Dissertation/Project/models/mistral-7B-Instruct-v0.2 in 4-bit quantized mode (bitsandbytes)...
+Loading checkpoint shards: 100% 3/3 [00:22<00:00,  7.48s/it]
+[INFO] Loaded Mistral in 4-bit quantized mode.
+[INFO] Mistral model loaded!
+[Mistral] Prompt sent to model (first 500 chars):
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly ...
+[Mistral] Model device: cuda:0
+[Mistral] input_ids shape: torch.Size([1, 1892]), attention_mask shape: torch.Size([1, 1892])
+[Mistral] Raw model output (first 500 chars):
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly ...
+[Mistral] Full decoded output:
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly present.
+- If some sections have no information, return an empty list.
+- Keep summary short but complete (5–8 bullet points).
+- Use simple, business-friendly language.
+
+RETURN THE OUTPUT IN THIS EXACT JSON FORMAT:
+{
+  "summary": ["point 1", "point 2"],
+  "action_items": [ {"task": "", "owner": "", "deadline": ""} ]
+}
+
+TRANSCRIPT:
+Meetingyesterday
+Meeting ID: 004 Project: MobileAppLaunch Date: 2025-11-05 Participants: - Name: Sonia Verma, Role: Project Manager - Name: Rahul Joshi, Role: Mobile Developer - Name: Deepak Rao, Role: Backend Developer - Name: Meera Nair, Role: QA - Name: Vikas Gupta, Role: DevOps Agenda: Issues, Risks Risk Factors: App store approval delays, API instability Description: Issues and risks for Story 4 discussed in Sprint 3 of the MobileAppLaunch project. Launching the new mobile application for Android and iOS. The team focused on blockers, bugs, and risk assessment. Discussion: Sonia Verma: Welcome to the Sprint 3 planning for the MobileAppLaunch project. Rahul Joshi: I’ll begin the app UI review and start integrating the new APIs. Deepak Rao: I’ll ensure the backend is ready for mobile integration. Meera Nair: I’ll prepare the test cases for the mobile app features. Vikas Gupta: I’ll set up the CI/CD pipeline for the release. Sonia Verma: Please update Jira with your tasks. Backend, your story is 3 points, Mobile is 3 points. Rahul Joshi: I found a bug in the push notification module. I’ll create a bug ticket for it. Sonia Verma: Thanks, Rahul. Please assign it to yourself and set the due date for this week. Deepak Rao: Can we clarify the API response format? Sonia Verma: Let’s schedule a call after the standup. Meera Nair: Are there any known risks for this sprint? Sonia Verma: App store approval delays and API instability are the main risks. Vikas Gupta: Do we have the release checklist ready? Sonia Verma: I’ll share the checklist by end of day. Rahul Joshi: I’ll update the sprint planning board after this call. Sonia Verma: Any other issues or blockers? Deepak Rao: None from my side. Meera Nair: All good here. Vikas Gupta: No blockers. Sonia Verma: Great, let’s have a productive sprint! Sonia Verma: Welcome to the Sprint 3 planning for the MobileAppLaunch project. Rahul Joshi: I’ll begin the app UI review and start integrating the new APIs. Deepak Rao: I’ll ensure the backend is ready for mobile integration. Meera Nair: I’ll prepare the test cases for the mobile app features. Vikas Gupta: I’ll set up the CI/CD pipeline for the release. Sonia Verma: Please update Jira with your tasks. Backend, your story is 3 points, Mobile is 3 points. Rahul Joshi: I found a bug in the push notification module. I’ll create a bug ticket for it. Sonia Verma: Thanks, Rahul. Please assign it to yourself and set the due date for this week. Deepak Rao: Can we clarify the API response format? Sonia Verma: Let’s schedule a call after the standup. Meera Nair: Are there any known risks for this sprint? Sonia Verma: App store approval delays and API instability are the main risks. Vikas Gupta: Do we have the release checklist ready? Sonia Verma: I’ll share the checklist by end of day. Rahul Joshi: I’ll update the sprint planning board after this call. Sonia Verma: Any other issues or blockers? Deepak Rao: None from my side. Meera Nair: All good here. Vikas Gupta: No blockers. Sonia Verma: Great, let’s have a productive sprint! Sonia Verma: Welcome to the Sprint 3 planning for the MobileAppLaunch project. Rahul Joshi: I’ll begin the app UI review and start integrating the new APIs. Deepak Rao: I’ll ensure the backend is ready for mobile integration. Meera Nair: I’ll prepare the test cases for the mobile app features. Vikas Gupta: I’ll set up the CI/CD pipeline for the release. Sonia Verma: Please update Jira with your tasks. Backend, your story is 3 points, Mobile is 3 points. Rahul Joshi: I found a bug in the push notification module. I’ll create a bug ticket for it. Sonia Verma: Thanks, Rahul. Please assign it to yourself and set the due date for this week. Deepak Rao: Can we clarify the API response format? Sonia Verma: Let’s schedule a call after the standup. Meera Nair: Are there any known risks for this sprint? Sonia Verma: App store approval delays and API instability are the main risks. Vikas Gupta: Do we have the release checklist ready? Sonia Verma: I’ll share the checklist by end of day. Rahul Joshi: I’ll update the sprint planning board after this call. Sonia Verma: Any other issues or blockers? Deepak Rao: None from my side. Meera Nair: All good here. Vikas Gupta: No blockers. Sonia Verma: Great, let’s have a productive sprint! Sonia Verma: Welcome to the Sprint 3 planning for the MobileAppLaunch project. Rahul Joshi: I’ll begin the app UI review and start integrating the new APIs. Deepak Rao: I’ll ensure the backend is ready for mobile integration. Meera Nair: I’ll prepare the test cases for the mobile app features. Vikas Gupta: I’ll set up the CI/CD pipeline for the release. Sonia Verma: Please update Jira with your tasks. Backend, your story is 3 points, Mobile is 3 points. Rahul Joshi: I found a bug in the push notification module. I’ll create a bug ticket for it. Sonia Verma: Thanks, Rahul. Please assign it to yourself and set the due date for this week. Deepak Rao: Can we clarify the API response format? Sonia Verma: Let’s schedule a call after the standup. Meera Nair: Are there any known risks for this sprint? Sonia Verma: App store approval delays and API instability are the main risks. Vikas Gupta: Do we have the release checklist ready? Sonia Verma: I’ll share the checklist by end of day. Rahul Joshi: I’ll update the sprint planning board after this call. Sonia Verma: Any other issues or blockers? Deepak Rao: None from my side. Meera Nair: All good here. Vikas Gupta: No blockers. Sonia Verma: Great, let’s have a productive sprint! Sonia Verma: Welcome to the Sprint 3 planning for the MobileAppLaunch project. Rahul Joshi: I’ll begin the app UI review and start integrating the new APIs. Deepak Rao: I’ll ensure the backend is ready for mobile integration. Meera Nair: I’ll prepare the test cases for the mobile app features. Vikas Gupta: I’ll set up the CI/CD pipeline for
+```vbnet
+the release.
+Sonia Verma: Please update Jira with your tasks. Backend, your story is 3 points, Mobile is 3 points.
+Rahul Joshi: I found a bug in the push notification module. I’ll create a bug ticket for it.
+Sonia Verma: Thanks, Rahul. Please assign it to yourself and set the due date for this week.
+Deepak Rao: Can we clarify the API response format?
+Sonia Verma: Let’s schedule a call after the standup.
+Meera Nair: Are there any known risks for this sprint?
+Sonia Verma: App store approval delays and API instability are the main risks.
+Vikas Gupta: Do we have the release checklist ready?
+Sonia Verma: I’ll share the checklist by end of day.
+Rahul Joshi: I’ll update the sprint planning board after this call.
+Sonia Verma: Any other issues or blockers?
+Deepak Rao: None from my side.
+Meera Nair: All good here.
+Vikas Gupta: No blockers.
+Sonia Verma: Great, let’s have a productive sprint!
+```
+
+{
+  "summary": [
+    "Sprint 3 planning for MobileAppLaunch project",
+    "Team discussed blockers, bugs, and risks",
+    "Rahul to review app UI and integrate new APIs",
+    "Deepak to prepare backend for mobile integration",
+    "Meera to prepare test cases for mobile app features",
+    "Vikas to set up CI/CD pipeline for release"
+  ],
+  "action_items": [
+    {
+      "task": "UI review and API integration",
+      "owner": "Rahul Joshi",
+      "deadline": "This week"
+    },
+    {
+      "task": "Prepare backend for mobile integration",
+      "owner": "Deepak Rao",
+      "deadline": ""
+    },
+    {
+      "task": "Prepare test cases for mobile app features",
+      "owner": "Meera Nair",
+      "deadline": ""
+    },
+    {
+      "task": "Set up CI/
+[Mistral] JSON block found in output.
+[Mistral] Parsed summary: ['point 1', 'point 2']
+[Mistral] Parsed action_items: [{'task': '', 'owner': '', 'deadline': ''}]
+SummarizationAgent: Using mode=mistral
+SummarizationAgent: Using local Mistral summarizer
+[INFO] Loading Mistral model, this may take a few moments...
+[INFO] Mistral model loaded!
+[Mistral] Prompt sent to model (first 500 chars):
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly ...
+[Mistral] Model device: cuda:0
+[Mistral] input_ids shape: torch.Size([1, 1125]), attention_mask shape: torch.Size([1, 1125])
+[Mistral] Raw model output (first 500 chars):
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly ...
+[Mistral] Full decoded output:
+ You are an AI specialized in analyzing meeting transcripts.
+Your task is to produce:
+1. A clear and concise SUMMARY of the meeting.
+2. A list of ACTION ITEMS with owners and deadlines if mentioned.
+3. A list of DECISIONS made during the meeting.
+4. A list of RISKS, blockers, or concerns raised.
+5. A list of FOLLOW-UP QUESTIONS that attendees should clarify.
+
+INSTRUCTIONS:
+- Read the provided meeting transcript thoroughly.
+- Do NOT invent information. Only extract what is explicitly or implicitly present.
+- If some sections have no information, return an empty list.
+- Keep summary short but complete (5–8 bullet points).
+- Use simple, business-friendly language.
+
+RETURN THE OUTPUT IN THIS EXACT JSON FORMAT:
+{
+  "summary": ["point 1", "point 2"],
+  "action_items": [ {"task": "", "owner": "", "deadline": ""} ]
+}
+
+TRANSCRIPT:
+ **Transcript #1 - Project PAY, Meeting Type: Sprint Planning, Target Word Count: 1500**
+
+[Sonia]: Good afternoon, everyone. We're here for our weekly sprint planning meeting for Project PAY. Rahul, Deepak, Meera, and Vikas, please share your screens and let me know where you'd like to start.
+
+[Deepak]: (sighs) Sure, Sonia. Let's begin with Jira. We have several tasks for this sprint. I've been working on the card payment feature, which is marked as a Story in Jira with the ID ST-001 [um... ah...]. Rahul, what have you got for us today?
+
+[Rahul]: I've been focusing on our bank API integration, Sonia. I've identified a few issues related to authentication and exception handling. One of them is marked as Task ID TA-012 in Jira [um... ah...]. I believe we need to discuss these in detail during this sprint planning session.
+
+[Meera]: Agreed, Rahul. We should also consider the edge cases for bank API integration. What happens if the bank API returns a 504 error during a refund? Or if the connection is lost mid-transaction? [Deepak]: (nods) Those are valid concerns, Meera. I'll make sure to add these as test cases in our testing plan and mention them in the Jira description for TA-012.
+
+[Vikas]: Speaking of edge cases, Sonia, let me bring up an issue with our error handling. In a recent test run, we encountered an unexpected exception during a transaction that wasn't properly handled. I've created a new Bug in Jira with the ID BU-014 [um... ah...]. We should discuss how to best handle this exception and prevent it from happening again.
+
+[Deepak]: Good catch, Vikas. Let's make sure we add enough error handling logic to our codebase so that exceptions like these are properly handled and do not cause any issues for our end-users [um... ah...].
+
+[Sonia]: Agreed. Rahul, you mentioned earlier that there were some issues with our Java implementation regarding dependencies and exception handling. Could we discuss these in more detail during this meeting?
+
+[Rahul]: Absolutely, Sonia. One issue is related to our Maven dependencies, specifically versioning. We've noticed that an outdated library is causing conflicts with our latest codebase. I suggest we update our pom.xml file and test the changes thoroughly before deploying [um... ah...].
+
+[Meera]: Regarding exception handling, Rahul, we should also consider using try-with-resources and proper error codes for better handling of exceptions during runtime [Deepak: +1, Sonia: agreed] [Sonia]: Great! Let's add these discussion points to our agenda for today. I'll update the Jira tickets with these details as well. Our next task is to determine action items based on this discussion. Rahul, could you summarize the issues you mentioned and assign them as tasks?
+
+[Rahul]: Absolutely, Sonia. Here are the action items:
+1. Update Maven dependencies in our pom.xml file. [Assignee: Dev 1]
+2. Refactor code to properly handle exceptions using try-with-resources and error codes. [Assignee: Dev 2]
+3. Add test cases for edge cases related to bank API integration. [Assignee: QE 1]
+4. Create a testing plan for the updated Java implementation. [Assignee: QE 2]
+5. Review and discuss Bug BU-014 regarding exception handling. [Assignees: All]
+
+[Sonia]: Perfect, Rahul. Let's add these action items to our Jira tickets as well. That concludes our sprint planning meeting for this week. Thanks, everyone, for your contributions!
+
+**Output:**
+{
+  "summary": [
+    "Discussed several tasks for Project PAY's sprint, including card payment feature, bank API integration, and error handling.",
+    "Identified issues related to Jira tickets ST-001, TA-012, and BU-014."
+  ],
+  "action_items": [
+    {
+      "task": "Update Maven dependencies in pom.xml file.",
+      "owner": "Dev 1"
+    },
+    {
+      "task": "Refactor code to properly handle exceptions using try-with-resources and error codes.",
+      "owner": "Dev 2"
+    },
+    {
+      "task": "Add test cases for edge cases related to bank API integration.",
+      "owner": "QE 1"
+    },
+    {
+      "task": "Create a testing plan for the updated Java implementation.",
+      "owner": "QE 2"
+    },
+    {
+      "task": "Review and discuss Bug BU-014 regarding exception handling.",
+      "owner": "All"
+    }
+  ]
+}
+[Mistral] JSON block found in output.
+[Mistral] Parsed summary: ['point 1', 'point 2']
+[Mistral] Parsed action_items: [{'task': '', 'owner': '', 'deadline': ''}]

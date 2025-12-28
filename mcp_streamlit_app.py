@@ -58,16 +58,17 @@ user_input = st.chat_input("Type your request (e.g., 'Summarize meeting', 'Extra
 
 def ai_message(msg):
     # If the message is a dict with summary/action_items, format it nicely
-    if isinstance(msg, dict) and ("summary_text" in msg or "action_items" in msg):
+    if isinstance(msg, dict) and ("summary_text" in msg or "summary" in msg or "action_items" in msg):
         content = ""
-        # Show summary as readable text
-        if "summary_text" in msg and msg["summary_text"]:
+        # Show summary as readable text (support both 'summary_text' and 'summary' keys)
+        summary_val = msg.get("summary_text") if "summary_text" in msg else msg.get("summary")
+        if summary_val:
             content += "**Summary:**\n"
-            if isinstance(msg["summary_text"], list):
-                for item in msg["summary_text"]:
+            if isinstance(summary_val, list):
+                for item in summary_val:
                     content += f"- {item}\n"
             else:
-                content += f"{msg['summary_text']}\n"
+                content += f"{summary_val}\n"
         # Show action items as readable text
         if "action_items" in msg and msg["action_items"]:
             content += "\n**Action Items:**\n"
