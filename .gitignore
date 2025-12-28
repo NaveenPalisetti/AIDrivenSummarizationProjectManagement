@@ -1,3 +1,6 @@
+# Ignore sensitive config files
+mcp/config/credentials.json
+.env
 # Ignore data, models, and outputmodels folders
 data/
 models/
