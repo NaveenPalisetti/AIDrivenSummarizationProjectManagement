@@ -79,7 +79,10 @@ def summarize_with_mistral(mistral_tokenizer, mistral_model, transcript, meeting
         print(f"[Mistral][Chunk {idx+1}] Raw model output (first 500 chars):\n", mistral_output[:500], "..." if len(mistral_output) > 500 else "")
         print(f"[Mistral][Chunk {idx+1}] Full decoded output:\n", mistral_output)
 
-        def extract_first_json(text):
+        def extract_last_json(text):
+            # Find all top-level JSON objects and return the last one
+            starts = []
+            ends = []
             brace_count = 0
             start = None
             for i, c in enumerate(text):
@@ -90,10 +93,15 @@ def summarize_with_mistral(mistral_tokenizer, mistral_model, transcript, meeting
                 elif c == '}':
                     brace_count -= 1
                     if brace_count == 0 and start is not None:
-                        return text[start:i+1]
+                        starts.append(start)
+                        ends.append(i+1)
+                        start = None
+            if starts and ends:
+                # Return the last JSON block
+                return text[starts[-1]:ends[-1]]
             return None
 
-        json_str = extract_first_json(mistral_output)
+        json_str = extract_last_json(mistral_output)
         if json_str:
             print(f"[Mistral][Chunk {idx+1}] JSON block found in output.")
             try:
