@@ -1,0 +1,16 @@
+spacy
+transformers>=4.36.0
+torch>=2.0.0
+accelerate>=0.26.0
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+openai
+requests
+streamlit
+pytest
+jira
+google-api-python-client
+google-auth
+google-auth-oauthlib
