@@ -6,8 +6,21 @@ from mcp.tools.llm_task_extraction import extract_tasks_jira_format
 import re
 from datetime import datetime
 
-with open('mcp/config/credentials.json') as f:
-    creds = json.load(f)
+
+# Try to load credentials from Google Drive path first, then local folder
+import pathlib
+drive_cred_path = pathlib.Path('/content/drive/MyDrive/credentials.json')
+local_cred_path = pathlib.Path('mcp/config/credentials.json')
+if drive_cred_path.exists():
+    print(f"[INFO] Loading credentials from Google Drive: {drive_cred_path}")
+    with open(drive_cred_path, 'r') as f:
+        creds = json.load(f)
+elif local_cred_path.exists():
+    print(f"[INFO] Loading credentials from local folder: {local_cred_path}")
+    with open(local_cred_path, 'r') as f:
+        creds = json.load(f)
+else:
+    raise FileNotFoundError("No credentials.json found in Google Drive or local folder.")
 jira = creds.get("jira", {})
 
 os.environ["JIRA_URL"] = jira.get("base_url", "")
