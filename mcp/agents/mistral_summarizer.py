@@ -58,13 +58,29 @@ def summarize_with_mistral(mistral_tokenizer, mistral_model, transcript, meeting
     )
     mistral_output = mistral_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
     print("[Mistral] Raw model output (first 500 chars):\n", mistral_output[:500], "..." if len(mistral_output) > 500 else "")
+    print("[Mistral] Full decoded output:\n", mistral_output)
     # Remove prompt/instructions/transcript if present in output
     # Try to extract only the JSON block or the part after the JSON block
-    json_match = re.search(r'\{.*\}', mistral_output, re.DOTALL)
-    if json_match:
+    # Extract only the first valid JSON object (handle extra data after JSON)
+    def extract_first_json(text):
+        brace_count = 0
+        start = None
+        for i, c in enumerate(text):
+            if c == '{':
+                if brace_count == 0:
+                    start = i
+                brace_count += 1
+            elif c == '}':
+                brace_count -= 1
+                if brace_count == 0 and start is not None:
+                    return text[start:i+1]
+        return None
+
+    json_str = extract_first_json(mistral_output)
+    if json_str:
         print("[Mistral] JSON block found in output.")
         try:
-            parsed = json.loads(json_match.group(0))
+            parsed = json.loads(json_str)
             summary_text = parsed.get('summary', [])
             action_items = parsed.get('action_items', [])
             print(f"[Mistral] Parsed summary: {summary_text}")

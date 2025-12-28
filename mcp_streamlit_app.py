@@ -60,29 +60,32 @@ def ai_message(msg):
     # If the message is a dict with summary/action_items, format it nicely
     if isinstance(msg, dict) and ("summary_text" in msg or "action_items" in msg):
         content = ""
-        if "summary_text" in msg:
+        # Show summary as readable text
+        if "summary_text" in msg and msg["summary_text"]:
             content += "**Summary:**\n"
             if isinstance(msg["summary_text"], list):
                 for item in msg["summary_text"]:
                     content += f"- {item}\n"
             else:
                 content += f"{msg['summary_text']}\n"
+        # Show action items as readable text
         if "action_items" in msg and msg["action_items"]:
             content += "\n**Action Items:**\n"
             for item in msg["action_items"]:
                 if isinstance(item, dict):
-                    task = item.get('task', '')
-                    owner = item.get('owner', '')
-                    deadline = item.get('deadline', '')
-                    content += f"- **Task:** {task}  "
+                    # Try common keys for task/action item
+                    task = item.get('task') or item.get('summary') or ''
+                    owner = item.get('owner') or item.get('assignee') or ''
+                    deadline = item.get('deadline') or item.get('due_date') or ''
+                    content += f"- **Task:** {task}"
                     if owner:
-                        content += f"**Owner:** {owner}  "
+                        content += f"  **Owner:** {owner}"
                     if deadline:
-                        content += f"**Deadline:** {deadline}"
+                        content += f"  **Deadline:** {deadline}"
                     content += "\n"
                 else:
                     content += f"- {item}\n"
-        st.session_state.chat_history.append({"role": "ai", "content": content})
+        st.session_state.chat_history.append({"role": "ai", "content": content.strip()})
     else:
         st.session_state.chat_history.append({"role": "ai", "content": msg})
 
