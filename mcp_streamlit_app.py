@@ -269,6 +269,7 @@ if user_input:
                 for idx in selected:
                     t = st.session_state.tasks[idx]
                     print(f"[DEBUG][Jira] Attempting to create Jira issue for task: {t}")
+                    print(f"[DEBUG][Jira] llm_task_manager.jira value: {llm_task_manager.jira}")
                     if llm_task_manager.jira:
                         issue_dict = {
                             'project': {'key': llm_task_manager.jira_project},

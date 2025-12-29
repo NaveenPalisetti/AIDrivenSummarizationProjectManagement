@@ -11,6 +11,7 @@ from datetime import datetime
 import pathlib
 drive_cred_path = pathlib.Path('/content/drive/MyDrive/credentials.json')
 local_cred_path = pathlib.Path('mcp/config/credentials.json')
+
 if drive_cred_path.exists():
     print(f"[INFO] Loading credentials from Google Drive: {drive_cred_path}")
     with open(drive_cred_path, 'r') as f:
@@ -20,8 +21,10 @@ elif local_cred_path.exists():
     with open(local_cred_path, 'r') as f:
         creds = json.load(f)
 else:
+    print("[ERROR] No credentials.json found in Google Drive or local folder.")
     raise FileNotFoundError("No credentials.json found in Google Drive or local folder.")
 jira = creds.get("jira", {})
+print(f"[DEBUG] Loaded Jira credentials: {jira}")
 
 os.environ["JIRA_URL"] = jira.get("base_url", "")
 os.environ["JIRA_USER"] = jira.get("user", "")
@@ -62,6 +65,16 @@ class LLMTaskManagerAgent:
         self.jira_project = os.environ.get("JIRA_PROJECT")
         self.jira = None
         print(f"LLMTaskManagerAgent: JIRA_URL={self.jira_url}, JIRA_USER={self.jira_user}, JIRA_PROJECT={self.jira_project}")
+        if not JIRA:
+            print("[ERROR][LLMTaskManagerAgent] Jira package not imported (JIRA is None)")
+        if not self.jira_url:
+            print("[ERROR][LLMTaskManagerAgent] JIRA_URL is missing or empty")
+        if not self.jira_user:
+            print("[ERROR][LLMTaskManagerAgent] JIRA_USER is missing or empty")
+        if not self.jira_token:
+            print("[ERROR][LLMTaskManagerAgent] JIRA_TOKEN is missing or empty")
+        if not self.jira_project:
+            print("[ERROR][LLMTaskManagerAgent] JIRA_PROJECT is missing or empty")
         if JIRA and self.jira_url and self.jira_user and self.jira_token:
             print("LLMTaskManagerAgent: Initializing JIRA connection")
             try:

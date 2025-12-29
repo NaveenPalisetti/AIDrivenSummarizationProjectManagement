@@ -1,0 +1,46 @@
+# Docker Compose for Modular MCP System
+
+version: '3.8'
+services:
+  orchestrator:
+    build: ../orchestrator
+    ports:
+      - "8000:8000"
+    depends_on:
+      - transcript_agent
+      - summarizer_agent
+      - extractor_agent
+      - jira_agent
+      - risk_agent
+  transcript_agent:
+    build: ../agents
+    command: uvicorn transcript_agent:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+  summarizer_agent:
+    build: ../agents
+    command: uvicorn summarizer_agent:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+  extractor_agent:
+    build: ../agents
+    command: uvicorn extractor_agent:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+  jira_agent:
+    build: ../agents
+    command: uvicorn jira_agent:app --host 0.0.0.0 --port 8004
+    ports:
+      - "8004:8004"
+  risk_agent:
+    build: ../agents
+    command: uvicorn risk_agent:app --host 0.0.0.0 --port 8005
+    ports:
+      - "8005:8005"
+  ui:
+    build: ../ui
+    command: streamlit run app.py --server.port 8501
+    ports:
+      - "8501:8501"
+    depends_on:
+      - orchestrator

@@ -1,0 +1,19 @@
+{
+  "agents": {
+    "calendar": {
+      "create_event": "http://localhost:8000/calendar/calendar/event/",
+      "get_event": "http://localhost:8000/calendar/calendar/event/{event_id}"
+    },
+    "mistral_summary": {
+      "summarize": "http://localhost:8000/summary/summary/mistral/"
+    },
+    "jira": {
+      "create_issue": "http://localhost:8000/jira/jira/issue/",
+      "update_issue": "http://localhost:8000/jira/jira/issue/update/"
+    },
+    "extractor": {"url": "http://localhost:8000/extractor/extract"},
+    "task": {"url": "http://localhost:8000/task/task"},
+    "risk": {"url": "http://localhost:8000/risk/risk"},
+    "notify": {"url": "http://localhost:8000/notify/notify"}
+  }
+}
