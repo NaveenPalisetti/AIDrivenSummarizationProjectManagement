@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
+
 import requests
 import json
+import os
 
 app = FastAPI()
 
@@ -10,7 +12,10 @@ class Message(BaseModel):
     payload: dict
     metadata: dict = {}
 
-with open('h:/Learning/BITS/Dissertation/Project/Week8/AIDrivenMeetingSummarizationWeek8/ModularMCP/config/mcp_config.json', 'r') as f:
+
+# Use environment variable for config path, fallback to default
+CONFIG_PATH = os.environ.get('MCP_CONFIG_PATH', 'h:/Learning/BITS/Dissertation/Project/Week8/AIDrivenMeetingSummarizationWeek8/ModularMCP/config/mcp_config.json')
+with open(CONFIG_PATH, 'r') as f:
     AGENT_CONFIG = json.load(f)
 
 @app.post("/route")

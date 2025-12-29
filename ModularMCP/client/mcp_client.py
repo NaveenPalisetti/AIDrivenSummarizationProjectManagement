@@ -5,6 +5,29 @@ import json
 import os
 
 class MCPClient:
+    # Extractor agent
+    def extract(self, data):
+        url = self.config["extractor"]["url"]
+        resp = requests.post(url, json={"type": "extract", "payload": data})
+        return resp.json()
+
+    # Task agent
+    def task(self, data):
+        url = self.config["task"]["url"]
+        resp = requests.post(url, json={"type": "task", "payload": data})
+        return resp.json()
+
+    # Risk agent
+    def risk(self, data):
+        url = self.config["risk"]["url"]
+        resp = requests.post(url, json={"type": "risk", "payload": data})
+        return resp.json()
+
+    # Notify agent
+    def notify(self, data):
+        url = self.config["notify"]["url"]
+        resp = requests.post(url, json={"type": "notify", "payload": data})
+        return resp.json()
     def __init__(self, config_path=None):
         if config_path is None:
             config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'mcp_config.json')
