@@ -53,6 +53,84 @@ def clean_due_date(date_str):
     return None
 
 class LLMTaskManagerAgent:
+
+    def create_jira_tasks_from_list(self, tasks, meeting_id=None):
+        """
+        Create Jira issues from a list of task dicts, trigger notifications, and return result.
+        Args:
+            tasks: list of dicts (each with at least 'title', optionally 'owner', 'due', 'description')
+            meeting_id: meeting/session identifier (optional)
+        Returns:
+            dict: {'created': [issue_keys], 'errors': [error_msgs]}
+        """
+        from mcp.tools.notification import send_notification
+        from mcp.tools.jira_monitor import notify_due_tasks, notify_sprints_ending_soon
+        created = []
+        errors = []
+        MAX_SUMMARY_LEN = 255
+        # Load existing tasks file
+        with open(self.tasks_file, 'r', encoding='utf-8') as f:
+            existing = json.load(f)
+        for t in tasks:
+            title = t.get('title') or t.get('Summary') or t.get('task') or str(t)
+            owner = t.get('owner') or t.get('assignee') or t.get('Assignee')
+            due = t.get('due') or t.get('due_date') or t.get('Due Date') or t.get('deadline')
+            description = t.get('description') or t.get('Description') or f"Auto-created from meeting {meeting_id}"
+            jira_title = title.replace('\n', ' ').replace('\r', ' ')[:MAX_SUMMARY_LEN]
+            # Save to local file
+            task_obj = {
+                'id': gen_id('task'),
+                'meeting_id': meeting_id,
+                'title': title,
+                'owner': owner,
+                'status': 'open',
+                'description': description,
+                'due': due
+            }
+            existing.append(task_obj)
+            # --- JIRA Integration ---
+            if self.jira:
+                issue_dict = {
+                    'project': {'key': self.jira_project},
+                    'summary': jira_title,
+                    'description': description,
+                    'issuetype': {'name': 'Task'},
+                }
+                if owner:
+                    issue_dict['assignee'] = {'name': owner}
+                if due:
+                    issue_dict['duedate'] = due
+                try:
+                    issue = self.jira.create_issue(fields=issue_dict)
+                    task_obj['jira_issue'] = issue.key
+                    created.append(issue.key)
+                    # Notify if due date is within 2 days
+                    from datetime import datetime, timedelta
+                    if due:
+                        try:
+                            due_dt = datetime.strptime(due[:10], '%Y-%m-%d')
+                            if due_dt - datetime.utcnow() <= timedelta(days=2):
+                                send_notification(f"Jira Task '{jira_title}' is due soon: {due}")
+                        except Exception as e:
+                            errors.append(f"Error parsing due date for notification: {e}")
+                except Exception as e:
+                    task_obj['jira_error'] = str(e)
+                    errors.append(str(e))
+            else:
+                task_obj['jira_error'] = "Jira connection not configured."
+                errors.append("Jira connection not configured.")
+        # Save updated tasks file
+        with open(self.tasks_file, 'w', encoding='utf-8') as f:
+            json.dump(existing, f, indent=2)
+        # After creating tasks, trigger due/sprint notifications
+        try:
+            notify_due_tasks(days=2)
+            notify_sprints_ending_soon(days=2)
+        except Exception as e:
+            errors.append(f"Notification error: {e}")
+        return {'created': created, 'errors': errors}
+        return {'created': created, 'errors': errors}
+
     def __init__(self):
         self.tasks_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'tasks', 'llm_tasks.json')
         os.makedirs(os.path.dirname(self.tasks_file), exist_ok=True)

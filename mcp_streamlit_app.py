@@ -111,7 +111,7 @@ if user_input:
             st.session_state.next_action = "select_calendar_event"
     elif "calendar" in user_input.lower() or ("event" in user_input.lower() and st.session_state.next_action is None):
         ai_message("Fetching Google Calendar event transcripts. Please wait...")
-        transcripts = get_calendar_transcripts(days_back=7, days_forward=1, calendar_id="primary")
+        transcripts = get_calendar_transcripts(days_back=50, days_forward=1, calendar_id="primary")
         st.session_state.calendar_transcripts = transcripts
         # Try to extract event titles if available in the transcript dicts, else use generic names
         event_titles = []
@@ -262,42 +262,23 @@ if user_input:
                 ai_message("No valid task numbers selected. Please type the task numbers you want to create in Jira (e.g., '1,3'), or 'all' to create all. Type 'show tasks' to see the list again.")
                 st.session_state.next_action = "select_tasks_to_create"
             else:
-                ai_message("Creating selected tasks in Jira...")
-                print(f"[DEBUG][Jira] Selected task indices: {selected}")
+                ai_message("Creating selected tasks in Jira via agent...")
                 llm_task_manager = LLMTaskManagerAgent()
-                created = []
-                for idx in selected:
-                    t = st.session_state.tasks[idx]
-                    print(f"[DEBUG][Jira] Attempting to create Jira issue for task: {t}")
-                    print(f"[DEBUG][Jira] llm_task_manager.jira value: {llm_task_manager.jira}")
-                    if llm_task_manager.jira:
-                        issue_dict = {
-                            'project': {'key': llm_task_manager.jira_project},
-                            'summary': t.get('title', t.get('Summary', ''))[:255],
-                            'description': t.get('description', t.get('Description', f"Auto-created from meeting {st.session_state.meeting_id}")),
-                            'issuetype': {'name': 'Task'},
-                        }
-                        if t.get('owner') or t.get('Assignee'):
-                            issue_dict['assignee'] = {'name': t.get('owner', t.get('Assignee'))}
-                        if t.get('due') or t.get('Due Date'):
-                            issue_dict['duedate'] = t.get('due', t.get('Due Date'))
-                        print(f"[DEBUG][Jira] Issue dict: {issue_dict}")
-                        try:
-                            issue = llm_task_manager.jira.create_issue(fields=issue_dict)
-                            print(f"[DEBUG][Jira] Created issue: {issue.key}")
-                            t['jira_issue'] = issue.key
-                            created.append(issue.key)
-                        except Exception as e:
-                            print(f"[ERROR][Jira] Exception during issue creation: {e}")
-                            t['jira_error'] = str(e)
-                    else:
-                        print("[ERROR][Jira] Jira connection not configured.")
-                        t['jira_error'] = "Jira connection not configured."
-                print(f"[DEBUG][Jira] Created issues: {created}")
-                if created:
-                    ai_message(f"Tasks created in Jira! Issues: {created}")
+                # Use the agent's method to create tasks and handle notifications
+                selected_tasks = [st.session_state.tasks[idx] for idx in selected]
+                result = llm_task_manager.create_jira_tasks_from_list(selected_tasks, meeting_id=st.session_state.meeting_id)
+                # result should be a dict with 'created' and 'errors' keys, or a message
+                if isinstance(result, dict):
+                    created = result.get('created', [])
+                    errors = result.get('errors', [])
+                    if created:
+                        ai_message(f"Tasks created in Jira! Issues: {created}")
+                    if errors:
+                        ai_message(f"Some tasks failed to create: {errors}")
+                    if not created and not errors:
+                        ai_message("No tasks created in Jira (unknown error).")
                 else:
-                    ai_message("No tasks created in Jira (Jira not configured or error occurred).")
+                    ai_message(str(result))
                 st.session_state.next_action = None
     elif "summarize" in user_input.lower():
         ai_message("Please paste your meeting transcript or type 'calendar' to fetch events.")
@@ -311,31 +292,20 @@ if user_input:
             st.session_state.next_action = None
     elif "jira" in user_input.lower():
         if st.session_state.tasks:
-            ai_message("Creating tasks in Jira...")
+            ai_message("Creating tasks in Jira via agent...")
             llm_task_manager = LLMTaskManagerAgent()
-            created = []
-            for t in st.session_state.tasks:
-                if llm_task_manager.jira:
-                    issue_dict = {
-                        'project': {'key': llm_task_manager.jira_project},
-                        'summary': t.get('title', t.get('Summary', ''))[:255],
-                        'description': t.get('description', t.get('Description', f"Auto-created from meeting {st.session_state.meeting_id}")),
-                        'issuetype': {'name': 'Task'},
-                    }
-                    if t.get('owner') or t.get('Assignee'):
-                        issue_dict['assignee'] = {'name': t.get('owner', t.get('Assignee'))}
-                    if t.get('due') or t.get('Due Date'):
-                        issue_dict['duedate'] = t.get('due', t.get('Due Date'))
-                    try:
-                        issue = llm_task_manager.jira.create_issue(fields=issue_dict)
-                        t['jira_issue'] = issue.key
-                        created.append(issue.key)
-                    except Exception as e:
-                        t['jira_error'] = str(e)
-            if created:
-                ai_message(f"Tasks created in Jira! Issues: {created}")
+            result = llm_task_manager.create_jira_tasks_from_list(st.session_state.tasks, meeting_id=st.session_state.meeting_id)
+            if isinstance(result, dict):
+                created = result.get('created', [])
+                errors = result.get('errors', [])
+                if created:
+                    ai_message(f"Tasks created in Jira! Issues: {created}")
+                if errors:
+                    ai_message(f"Some tasks failed to create: {errors}")
+                if not created and not errors:
+                    ai_message("No tasks created in Jira (unknown error).")
             else:
-                ai_message("No tasks created in Jira (Jira not configured or error occurred).")
+                ai_message(str(result))
         else:
             ai_message("No tasks available to create in Jira. Please extract tasks first.")
         st.session_state.next_action = None

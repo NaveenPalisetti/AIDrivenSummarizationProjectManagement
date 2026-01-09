@@ -17,18 +17,31 @@ with open('mcp/config/credentials.json') as f:
     creds = json.load(f)
 os.environ["OPENAI_API_KEY"] = creds.get("openai_api_key", "")
 
+
+
+
 def get_bart_model():
+    print("[DEBUG] Entering get_bart_model()")
     if not hasattr(get_bart_model, "tokenizer") or not hasattr(get_bart_model, "model"):
         bart_drive_path = os.environ.get("BART_MODEL_PATH")
+        print(f"[DEBUG] BART_MODEL_PATH env: {bart_drive_path}")
         if bart_drive_path and os.path.exists(bart_drive_path):
             model_path = bart_drive_path
         else:
             model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "bart_finetuned_meeting_summary"))
+        print(f"[DEBUG] BART model_path resolved: {model_path}")
         if not os.path.exists(model_path):
+            print(f"[ERROR] BART model path does not exist: {model_path}")
             raise FileNotFoundError(f"BART model path not found: {model_path}")
-        get_bart_model.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        get_bart_model.model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
-        #print(f"[INFO] Loaded BART model from {model_path}")
+        try:
+            get_bart_model.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            get_bart_model.model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+            print(f"[DEBUG] BART model and tokenizer loaded from {model_path}")
+        except Exception as e:
+            print(f"[ERROR] Exception loading BART model: {e}")
+            raise
+    else:
+        print("[DEBUG] BART model/tokenizer already loaded (cached)")
     return get_bart_model.tokenizer, get_bart_model.model
 
 def get_mistral_model():
@@ -58,14 +71,81 @@ def get_mistral_model():
 
 class SummarizationAgent:
     def __init__(self, mode="auto"):
-        """
-        mode: "auto" (default) - use LLM if API key, else BART
-              "llm"            - force LLM
-              "bart"           - force BART
-              "mistral"        - force local Mistral
-        """
+        print(f"[DEBUG] SummarizationAgent.__init__ called with mode: {mode}")
         self.context = ContextHandler()
         self.mode = mode
+    def summarize_protocol(self, processed_transcripts=None, mode=None, **kwargs):
+        """
+        Protocol-driven: summarize all transcript chunks as a single transcript (sync, for orchestrator)
+        mode: 'llm', 'bart', 'mistral', or None (defaults to self.mode)
+        Returns: a single summary string
+        """
+        if processed_transcripts is None:
+            processed_transcripts = kwargs.get("processed_transcripts", [])
+        print(f"[DEBUG] summarize_protocol received mode arg: {mode}, self.mode: {self.mode}")
+        mode = mode or self.mode
+        print(f"[SummarizationAgent] summarize_protocol using mode: {mode}")
+        print(f"[SummarizationAgent] Number of chunks: {len(processed_transcripts)}")
+        full_transcript = "\n".join(processed_transcripts)
+        print(f"[SummarizationAgent] Full transcript length: {len(full_transcript)}")
+        summary = None
+        if mode == "llm":
+            print("[SummarizationAgent] Entering LLM branch")
+            try:
+                api_key = os.environ.get('OPENAI_API_KEY')
+                print(f"[SummarizationAgent] openai module: {openai}")
+                print(f"[SummarizationAgent] api_key present: {bool(api_key)}")
+                if openai and api_key:
+                    prompt = (
+                        "You are an AI specialized in analyzing meeting transcripts.\n"
+                        "Your task is to produce a concise summary of the following transcript.\n"
+                        f"TRANSCRIPT:\n{full_transcript}\n"
+                        "Return a short summary (5-8 bullet points)."
+                    )
+                    print(f"[SummarizationAgent] LLM prompt length: {len(prompt)}")
+                    client = OpenAI(api_key=api_key)
+                    resp = client.chat.completions.create(
+                        model='gpt-4o-mini',
+                        messages=[{'role':'user','content':prompt}],
+                        max_tokens=400,
+                        temperature=0.2
+                    )
+                    summary = resp.choices[0].message.content.strip()
+                    print("[SummarizationAgent] LLM summary received.")
+                else:
+                    print("[SummarizationAgent] LLM not available, using fallback.")
+                    summary = full_transcript[:100] + ("..." if len(full_transcript) > 100 else "")
+            except Exception as e:
+                print(f"[SummarizationAgent] LLM Exception: {e}")
+                summary = full_transcript[:100] + ("..." if len(full_transcript) > 100 else f" [LLM error: {e}]")
+        elif mode == "bart":
+            print("[SummarizationAgent] Entering BART branch")
+            try:
+                tokenizer, model = get_bart_model()
+                print(f"[DEBUG] BART model objects: tokenizer={tokenizer is not None}, model={model is not None}")
+                summary_obj = summarize_with_bart(tokenizer, model, full_transcript, "meeting")
+                summary = summary_obj.get('summary_text', '')
+                print(f"[DEBUG] BART summary: {summary[:100]}")
+            except Exception as e:
+                print(f"[ERROR] BART Exception: {e}")
+                summary = full_transcript[:100] + ("..." if len(full_transcript) > 100 else f" [BART error: {e}]")
+        elif mode == "mistral":
+            print("[SummarizationAgent] Entering Mistral branch")
+            try:
+                mistral_tokenizer, mistral_model = get_mistral_model()
+                print("[SummarizationAgent] Mistral model loaded.")
+                summary_obj = summarize_with_mistral(mistral_tokenizer, mistral_model, full_transcript, "meeting")
+                summary = summary_obj.get('summary_text', '')
+                print("[SummarizationAgent] Mistral summary received.")
+            except Exception as e:
+                print(f"[SummarizationAgent] Mistral Exception: {e}")
+                summary = full_transcript[:100] + ("..." if len(full_transcript) > 100 else f" [Mistral error: {e}]")
+        else:
+            print(f"[SummarizationAgent] Unknown or fallback mode: {mode}")
+            print("[SummarizationAgent] Entering fallback branch (no model available)")
+            summary = full_transcript[:100] + ("..." if len(full_transcript) > 100 else "")
+        print(f"[SummarizationAgent] Final summary length: {len(summary) if summary else 0}")
+        return summary
 
     async def summarize(self, meeting_id: str, transcript: str) -> dict:
         api_key = os.environ.get('OPENAI_API_KEY')

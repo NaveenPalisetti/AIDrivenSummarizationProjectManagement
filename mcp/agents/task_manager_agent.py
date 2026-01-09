@@ -13,7 +13,58 @@ try:
 except ImportError:
 	JIRA = None
 
+
 class TaskManagerAgent:
+	def get_due_soon_tasks(self, days=1):
+		"""
+		Return a list of Jira tasks due within the next `days` days.
+		"""
+		from datetime import datetime, timedelta
+		due_soon = []
+		if not self.jira:
+			return due_soon
+		jql = f'project={self.jira_project} AND duedate >= now() AND duedate <= {days}d order by duedate asc'
+		try:
+			issues = self.jira.search_issues(jql)
+			for issue in issues:
+				due = getattr(issue.fields, 'duedate', None)
+				if due:
+					due_soon.append({
+						'key': issue.key,
+						'summary': issue.fields.summary,
+						'due_date': due
+					})
+		except Exception as e:
+			print(f"[TaskManagerAgent] Error fetching due soon tasks: {e}")
+		return due_soon
+
+	def get_sprints_ending_soon(self, days=1):
+		"""
+		Return a list of sprints ending within the next `days` days (if using Jira Agile).
+		"""
+		# This requires Jira Agile API and board/sprint setup
+		# Example assumes you have a board id set as self.jira_board_id
+		from datetime import datetime, timedelta
+		ending_soon = []
+		if not self.jira or not hasattr(self, 'jira_board_id'):
+			return ending_soon
+		try:
+			sprints = self.jira.sprints(self.jira_board_id, state='active')
+			now = datetime.utcnow()
+			soon = now + timedelta(days=days)
+			for sprint in sprints:
+				if sprint.endDate:
+					end = datetime.strptime(sprint.endDate[:19], '%Y-%m-%dT%H:%M:%S')
+					if now < end <= soon:
+						ending_soon.append({
+							'id': sprint.id,
+							'name': sprint.name,
+							'end_date': sprint.endDate
+						})
+		except Exception as e:
+			print(f"[TaskManagerAgent] Error fetching sprints: {e}")
+		return ending_soon
+
 	def __init__(self):
 		self.tasks_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'tasks', 'tasks.json')
 		os.makedirs(os.path.dirname(self.tasks_file), exist_ok=True)
@@ -31,6 +82,8 @@ class TaskManagerAgent:
 			self.jira = JIRA(server=self.jira_url, basic_auth=(self.jira_user, self.jira_token))
 
 	def extract_and_create_tasks(self, meeting_id: str, summary: dict):
+		from mcp.tools.notification import send_notification
+		from mcp.tools.jira_monitor import notify_due_tasks, notify_sprints_ending_soon
 		tasks = []
 		raw_actions = summary.get('action_items') or []
 		if not raw_actions and 'summary_text' in summary:
@@ -43,7 +96,6 @@ class TaskManagerAgent:
 		MAX_SUMMARY_LEN = 255
 
 		for a in raw_actions:
-			# ...existing code...
 			if isinstance(a, dict):
 				title = a.get('description') or a.get('task') or str(a)
 				owner = a.get('assignee') or a.get('owner')
@@ -53,7 +105,6 @@ class TaskManagerAgent:
 				owner = None
 				due = None
 
-			# Truncate title for Jira summary
 			jira_title = title.replace('\n', ' ').replace('\r', ' ')[:MAX_SUMMARY_LEN]
 
 			t = {
@@ -81,9 +132,21 @@ class TaskManagerAgent:
 				try:
 					issue = self.jira.create_issue(fields=issue_dict)
 					t['jira_issue'] = issue.key
+					# Notify if due date is within 2 days
+					from datetime import datetime, timedelta
+					if due:
+						try:
+							due_dt = datetime.strptime(due[:10], '%Y-%m-%d')
+							if due_dt - datetime.utcnow() <= timedelta(days=2):
+								send_notification(f"Jira Task '{jira_title}' is due soon: {due}")
+						except Exception as e:
+							print(f"[TaskManagerAgent] Error parsing due date for notification: {e}")
 				except Exception as e:
 					t['jira_error'] = str(e)
 
 		with open(self.tasks_file, 'w', encoding='utf-8') as f:
 			json.dump(existing, f, indent=2)
+		# After creating tasks, trigger due/sprint notifications
+		notify_due_tasks(days=2)
+		notify_sprints_ending_soon(days=2)
 		return tasks

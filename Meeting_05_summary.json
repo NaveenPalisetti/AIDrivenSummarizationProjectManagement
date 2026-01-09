@@ -1,0 +1,99 @@
+{
+  "meeting_id": "005",
+  "project": "Enovia Route Automation",
+  "participants": [
+    {
+      "name": "AP (Senior PLM Solution Architect)",
+      "role": "Lead"
+    },
+    {
+      "name": "V (Senior Enovia Engineer)",
+      "role": "Technical Lead"
+    },
+    {
+      "name": "A (Assistant Software Engineer)",
+      "role": "UI and JPO tasks"
+    },
+    {
+      "name": "P (Quality Engineer)",
+      "role": "Functional testing"
+    },
+    {
+      "name": "M (Senior Quality Engineer)",
+      "role": "Edge cases and API stability"
+    },
+    {
+      "name": "D (Business Analyst)",
+      "role": "User stories and priorities"
+    },
+    {
+      "name": "S (Product Owner)",
+      "role": "Route Management priorities"
+    }
+  ],
+  "agenda": [
+    "Reviewing the design of the check trigger for role-based attribute validation",
+    "Identifying action items and assigning tasks to team members"
+  ],
+  "risk_factors": [
+    "Performance impact on the system",
+    "API stability and regression testing"
+  ],
+  "summary": [
+    "Defining role-based attributes for Route objects using MQL",
+    "Creating a DomainObject API for the Route object to capture these attributes",
+    "Designing and implementing the OOTB policy trigger to enforce checks",
+    "Testing the check trigger's performance impact on the system",
+    "Conducting functional and regression testing to ensure API stability"
+  ],
+  "action_items": [
+    {
+      "summary": "Define role-based attributes for Route objects using MQL",
+      "description": "Create MQL script to define required role-based attributes for Route objects",
+      "assignee": "V",
+      "issue_type": "Story",
+      "story_points": 5,
+      "due_date": "2023-01-15"
+    },
+    {
+      "summary": "Create DomainObject API for the Route object",
+      "description": "Design and implement the API to capture role-based attributes",
+      "assignee": "V",
+      "issue_type": "Task",
+      "story_points": 3,
+      "due_date": "2023-01-18"
+    },
+    {
+      "summary": "Design and implement the OOTB policy trigger",
+      "description": "Create and configure the policy trigger to enforce attribute checks",
+      "assignee": "V",
+      "issue_type": "Task",
+      "story_points": 3,
+      "due_date": "2023-01-20"
+    },
+    {
+      "summary": "Test performance impact on the system",
+      "description": "Perform load testing and optimize queries to minimize impact",
+      "assignee": "A",
+      "issue_type": "Bug",
+      "story_points": 2,
+      "due_date": "2023-01-16"
+    },
+    {
+      "summary": "Functional testing of the check trigger",
+      "description": "Test role-based access control functionality",
+      "assignee": "P",
+      "issue_type": "Task",
+      "story_points": 5,
+      "due_date": "2023-01-23"
+    },
+    {
+      "summary": "Regression testing of the API",
+      "description": "Test for any unexpected behavior or regressions",
+      "assignee": "M",
+      "issue_type": "Task",
+      "story_points": 5,
+      "due_date": "2023-01-25"
+    }
+  ]
+}

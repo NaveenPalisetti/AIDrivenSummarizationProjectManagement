@@ -14,3 +14,8 @@ jira
 google-api-python-client
 google-auth
 google-auth-oauthlib
+langchain>=0.1.0
+langchain-openai
+langchain-community
+python-multipart
+httpx
